@@ -16,6 +16,7 @@ table <- url %>%
   data.frame()
 
 # Read the happines data from the UN from the CSV and put it in a dataframe
+# Using the data from 2017 as the wikipedia data is also from 2017
 df2017 <- read_csv('2017.csv')
 
 
