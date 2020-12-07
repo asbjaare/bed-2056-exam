@@ -1,3 +1,19 @@
+---
+title: "Bed-2056 Exam"
+author: "Asbjorn Aarekol & Morten Ostrem"
+date: "12/7/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	message = FALSE,
+	warning = FALSE,
+	include = FALSE
+)
+```
+
+```{r create data, include=FALSE}
 rm(list=ls())
 
 # load packages
@@ -19,8 +35,6 @@ table <- url %>%
 # Using the data from 2017 as the wikipedia data is also from 2017
 df2017 <- read_csv('2017.csv')
 
-
-# Rename the variables in the wikipedia table df and merge it with the happines data
 table <- table %>% 
   rename("Country" = Country..or.dependent.territory..subnational.area..etc..) %>% 
   rename("Firearms100" = Estimate.of.civilian.firearms.per.100.persons) %>% 
@@ -30,6 +44,11 @@ table <- table %>%
   select(Country, Firearms100, Firearms_estimate, Reg_firearm, Unreg_firearm) %>% 
   merge(., df2017)
 
+```
+
+## Plot of firearms per 100 inhabitant
+
+```{r 100fire , echo=FALSE}
 
 # Plot the countries sorted in a barplot
 ggplot(table, aes(reorder(Country, Firearms100), Firearms100, fill = Country)) +
@@ -39,14 +58,36 @@ ggplot(table, aes(reorder(Country, Firearms100), Firearms100, fill = Country)) +
         axis.title.x = element_blank(),
         axis.ticks.y = element_blank(),
         axis.title.y = element_blank())
+```
+
+```{r fire100 vs happines, echo=FALSE}
 
 # Plot the firearms100 vs happines
 ggplot(table, aes(Happiness.Score, Firearms100, color = Country)) +
-  geom_jitter(aes(), show.legend = FALSE) +
-  theme(strip.text.y = element_text(angle = 0),
-        axis.text.x = element_text(angle = 45, hjust = 1, size = 6),
-        axis.title.x = element_blank(),
-        axis.ticks.y = element_blank(),
-        axis.title.y = element_blank())
+  geom_jitter(aes(), show.legend = FALSE)
 
- 
+
+```
+
+```{r fire100 vs GDP, echo=FALSE}
+
+# Plot the firearms100 vs happines
+ggplot(table, aes(Economy..GDP.per.Capita., Firearms100, color = Country)) +
+  geom_jitter(aes(), show.legend = FALSE)
+
+
+```
+
+
+```{r fire100 vs Life expectany, echo=FALSE}
+
+# Plot the firearms100 vs happines
+ggplot(table, aes(Health..Life.Expectancy., Firearms100, color = Country)) +
+  geom_jitter(aes(), show.legend = FALSE)
+
+
+```
+
+
+
+
