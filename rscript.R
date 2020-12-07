@@ -36,3 +36,4 @@ ggplot(table, aes(reorder(Country, Firearms100), Firearms100, fill = Country)) +
         axis.title.y = element_blank())
 
 
+ 
