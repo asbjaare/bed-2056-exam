@@ -41,7 +41,9 @@ table <- table %>%
   rename("Firearms_estimate" = Estimate.of.firearms.in.civilian.possession) %>% 
   rename("Reg_firearm" = Registered.firearms) %>% 
   rename("Unreg_firearm" = Unregistered.firearms) %>% 
-  select(Country, Firearms100, Firearms_estimate, Reg_firearm, Unreg_firearm) %>% 
+  rename("Population" = Population.2017) %>% 
+  mutate(as.numeric(Population))
+  select(Country, Firearms100, Firearms_estimate, Reg_firearm, Unreg_firearm, Population) %>% 
   merge(., df2017)
 
 ```
@@ -63,8 +65,9 @@ ggplot(table, aes(reorder(Country, Firearms100), Firearms100, fill = Country)) +
 ```{r fire100 vs happines, echo=FALSE}
 
 # Plot the firearms100 vs happines
-ggplot(table, aes(Happiness.Score, Firearms100, color = Country)) +
-  geom_jitter(aes(), show.legend = FALSE)
+ggplot(table, aes(Happiness.Score, Firearms100, color = Country, size = Population)) +
+  geom_jitter(aes(), show.legend = FALSE) +
+  geom_text(aes(label=ifelse(Firearms100>25,as.character(Country),'')), hjust=1,vjust=0, show.legend = FALSE)
 
 
 ```
