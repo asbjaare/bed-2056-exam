@@ -53,7 +53,7 @@ table <- "https://en.wikipedia.org/wiki/Estimated_number_of_civilian_guns_per_ca
   data.frame()
 
 # Rename the variables in the wikipedia table df and merge it with the happines data
-table2 <- table %>% 
+table <- table %>% 
   rename("Country" = Country..or.dependent.territory..subnational.area..etc..) %>% 
   merge(., df2017) %>% 
   rename("Happiness_score" = Happiness.Score) %>% 
@@ -66,15 +66,27 @@ table2 <- table %>%
   select(Country, Firearms_per100, Firearms_estimate, Reg_firearm, Unreg_firearm, Population, Region, Happiness_score, GDP_percap) 
 
 
+regional_differences <- homicide_df %>% 
+  filter(Year == 2012, Level == "Country") %>% 
+  select(Territory, Value) %>% 
+  rename(Country = Territory) %>% 
+  merge(table)
 
 
-
+ggplot(regional_differences, aes(Firearms_per100, Value, color = Region, size = Population)) +
+  geom_jitter(aes(), show.legend = TRUE) +
+  xlab("Firearms per 100 inhabitants") +
+  ylab("Homicide rate by firearms") +
+  theme(axis.ticks.y = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y.left = element_blank(),
+        axis.text.x = element_blank())
 
 
 ##### everything below is untouched #####
 
 # Plot the countries sorted in a barplot
-ggplot(table, aes(reorder(Country, Firearms100), Firearms100, fill = Country)) +
+ggplot(table, aes(reorder(Country, Firearms_per100), Firearms_per100, fill = Country)) +
   geom_bar(stat = "identity", show.legend = FALSE) +
   theme(strip.text.y = element_text(angle = 0),
         axis.text.x = element_text(angle = 45, hjust = 1, size = 6),
@@ -83,7 +95,7 @@ ggplot(table, aes(reorder(Country, Firearms100), Firearms100, fill = Country)) +
         axis.title.y = element_blank())
 
 # Plot the firearms100 vs happines
-ggplot(table, aes(Happiness.Score, Firearms100, color = Country)) +
+ggplot(table, aes(Happiness_score, Firearms_per100, color = Country)) +
   geom_jitter(aes(), show.legend = FALSE)
 
 ggplot(homicide_df, aes(Year, Value, group = Subregion, fill = Subregion)) +
