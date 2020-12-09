@@ -26,7 +26,7 @@ table <- "https://en.wikipedia.org/wiki/Estimated_number_of_civilian_guns_per_ca
 
 
 # Rename the variables in the wikipedia table df and merge it with the happines data
-table <- table %>% 
+df <- table %>% 
   rename("Country" = Country..or.dependent.territory..subnational.area..etc..) %>% 
   rename("Firearms100" = Estimate.of.civilian.firearms.per.100.persons) %>% 
   rename("Firearms_estimate" = Estimate.of.firearms.in.civilian.possession) %>% 
@@ -40,9 +40,8 @@ table <- table %>%
   select(Country, Firearms100, Firearms_estimate, Reg_firearm, Unreg_firearm, Population, Region) %>% 
   merge(., df2017)
 
-
 # Plot the countries sorted in a barplot
-ggplot(table, aes(reorder(Country, Firearms100), Firearms100, fill = Country)) +
+ggplot(df, aes(reorder(Country, Firearms100), Firearms100, fill = Country)) +
   geom_bar(stat = "identity", show.legend = FALSE) +
   theme(strip.text.y = element_text(angle = 0),
         axis.text.x = element_text(angle = 45, hjust = 1, size = 6),
@@ -51,19 +50,47 @@ ggplot(table, aes(reorder(Country, Firearms100), Firearms100, fill = Country)) +
         axis.title.y = element_blank())
 
 # Plot the firearms100 vs happines
-ggplot(table, aes(Happiness.Score, Firearms100, color = Country)) +
+ggplot(df, aes(Happiness.Score, Firearms100, color = Country)) +
   geom_jitter(aes(), show.legend = FALSE)
 
+# Plots the homicide rate 
 ggplot(homicide_df, aes(Year, Value, group = Subregion, fill = Subregion)) +
   geom_bar(stat = 'identity', show.legend = FALSE) +
   facet_wrap(~Subregion) +
   theme_light() +
   theme(axis.text.y.left = element_blank())
 
+# Dont think i need this but w/e
+df_2 <- table %>% 
+  rename("Country" = Country..or.dependent.territory..subnational.area..etc..) %>% 
+  rename("Firearms100" = Estimate.of.civilian.firearms.per.100.persons) %>% 
+  rename("Firearms_estimate" = Estimate.of.firearms.in.civilian.possession) %>% 
+  rename("Reg_firearm" = Registered.firearms) %>% 
+  rename("Unreg_firearm" = Unregistered.firearms) %>% 
+  rename("Population" = Population.2017) %>% 
+  mutate(Population = sub(",", "", Population, fixed = FALSE)) %>%
+  mutate(Population = sub(",", "", Population, fixed = FALSE)) %>% 
+  mutate(Population = as.numeric(Population)) %>% 
+  select(Country, Firearms100, Population)
+
+# Create the 
+df_fire_vs_homi <- homicide_df %>% 
+  filter(., Level == "Country") %>% 
+  filter(., Year == 2012) %>% 
+  select(Territory, Value) %>% 
+  rename('Country' = Territory) %>% 
+  merge(., df_2)
 
 
-
-
+# Plot the firearms100 vs happines
+ggplot(df_fire_vs_homi, aes(Value, Firearms100, color = Country, size = Population)) +
+  geom_jitter(aes(), show.legend = FALSE) +
+  xlab("Homicide rate by firearms") +
+  ylab("Firearms per 100 inhabitants") +
+  theme(axis.ticks.y = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y.left = element_blank(),
+        axis.text.x = element_blank())
 
 
 
