@@ -42,7 +42,8 @@ df2017 <- read_csv('2017.csv')
 # Data gotten from dataUNODC
 homicide_df <- read_excel('homicide_all.xls') %>% 
   subset(., select = c(1:7)) %>% 
-  filter(., Indicator == 'Firearms rate')
+  filter(., Indicator == 'Firearms rate') %>% 
+  mutate("Firearms_deathrate" = as.numeric(Value))
 
 # Find the table from wikipedia and return a dataframe
 table <- "https://en.wikipedia.org/wiki/Estimated_number_of_civilian_guns_per_capita_by_country" %>%
@@ -68,12 +69,21 @@ table <- table %>%
 
 regional_differences <- homicide_df %>% 
   filter(Year == 2012, Level == "Country") %>% 
-  select(Territory, Value) %>% 
+  select(Territory, Firearms_deathrate) %>% 
   rename(Country = Territory) %>% 
   merge(table)
 
 
-ggplot(regional_differences, aes(Firearms_per100, Value, color = Region, size = Population)) +
+ggplot(regional_differences, aes(Firearms_per100, Firearms_deathrate, color = Region, size = Population)) +
+  geom_jitter(aes(), show.legend = TRUE) +
+  xlab("Firearms per 100 inhabitants") +
+  ylab("Homicide rate by firearms") +
+  theme(axis.ticks.y = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y.left = element_blank(),
+        axis.text.x = element_blank())
+
+ggplot(regional_differences, aes(GDP_percap, Happiness_score, color = Region, size = Population)) +
   geom_jitter(aes(), show.legend = TRUE) +
   xlab("Firearms per 100 inhabitants") +
   ylab("Homicide rate by firearms") +
