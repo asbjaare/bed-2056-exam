@@ -3,18 +3,22 @@ rm(list=ls())
 # load packages
 library(tidyverse)
 library(rvest)
-
-# Url for the schedule
-#url <- "https://en.wikipedia.org/wiki/List_of_countries_by_firearm-related_death_rate"
-url <- "https://en.wikipedia.org/wiki/Estimated_number_of_civilian_guns_per_capita_by_country"
+library(readxl)
 
 # Read the happines data from the UN from the CSV and put it in a dataframe
 # Using the data from 2017 as the wikipedia data is also from 2017
+# Data gotten from kaggle
 df2017 <- read_csv('2017.csv')
 
+# Create a dataframe for all homicide worldwide and remove the source collums
+# Remove the subregion rows aswell
+# Data gotten from dataUNODC
+homicide_df <- read_excel('homicide_all.xls') %>% 
+  subset(., select = c(1:7)) %>% 
+  filter(., Indicator == 'Firearms rate')
 
 # Find the table from wikipedia and return a dataframe
-table <- url %>%
+table <- "https://en.wikipedia.org/wiki/Estimated_number_of_civilian_guns_per_capita_by_country" %>%
   read_html() %>%
   html_nodes(xpath='//table[1]') %>% 
   html_table(fill = TRUE) %>% 
@@ -49,6 +53,20 @@ ggplot(table, aes(reorder(Country, Firearms100), Firearms100, fill = Country)) +
 # Plot the firearms100 vs happines
 ggplot(table, aes(Happiness.Score, Firearms100, color = Country)) +
   geom_jitter(aes(), show.legend = FALSE)
+
+ggplot(homicide_df, aes(Year, Value, group = Subregion, fill = Subregion)) +
+  geom_bar(stat = 'identity') +
+  facet_wrap(~Subregion) +
+  theme_light() +
+  theme(axis.text.y.left = element_blank())
+
+
+
+
+
+
+
+
 
 
  
