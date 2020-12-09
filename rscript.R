@@ -15,7 +15,8 @@ df2017 <- read_csv('2017.csv')
 # Data gotten from dataUNODC
 homicide_df <- read_excel('homicide_all.xls') %>% 
   subset(., select = c(1:7)) %>% 
-  filter(., Indicator == 'Firearms rate')
+  filter(., Indicator == 'Firearms rate') %>% 
+  mutate("Firearm_deathrate" = as.numeric(Value))
 
 # Find the table from wikipedia and return a dataframe
 table <- "https://en.wikipedia.org/wiki/Estimated_number_of_civilian_guns_per_capita_by_country" %>%
