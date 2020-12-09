@@ -42,8 +42,11 @@ table <- table %>%
   rename("Reg_firearm" = Registered.firearms) %>% 
   rename("Unreg_firearm" = Unregistered.firearms) %>% 
   rename("Population" = Population.2017) %>% 
-  mutate(as.numeric(Population))
-  select(Country, Firearms100, Firearms_estimate, Reg_firearm, Unreg_firearm, Population) %>% 
+  mutate(Population = sub(",", "", Population, fixed = FALSE)) %>% 
+  mutate(Population = sub(",", "", Population, fixed = FALSE)) %>%
+  mutate(Population = sub(",", "", Population, fixed = FALSE)) %>% 
+  mutate(Population = as.numeric(Population)) %>% 
+  select(Country, Firearms100, Firearms_estimate, Reg_firearm, Unreg_firearm, Population, Region, Var.1) %>% 
   merge(., df2017)
 
 ```
@@ -53,8 +56,8 @@ table <- table %>%
 ```{r 100fire , echo=FALSE}
 
 # Plot the countries sorted in a barplot
-ggplot(table, aes(reorder(Country, Firearms100), Firearms100, fill = Country)) +
-  geom_bar(stat = "identity", show.legend = FALSE) +
+ggplot(table, aes(reorder(Country, Firearms100), Firearms100, fill = Region)) +
+  geom_bar(stat = "identity", show.legend = TRUE) +
   theme(strip.text.y = element_text(angle = 0),
         axis.text.x = element_text(angle = 45, hjust = 1, size = 6),
         axis.title.x = element_blank(),
@@ -67,7 +70,8 @@ ggplot(table, aes(reorder(Country, Firearms100), Firearms100, fill = Country)) +
 # Plot the firearms100 vs happines
 ggplot(table, aes(Happiness.Score, Firearms100, color = Country, size = Population)) +
   geom_jitter(aes(), show.legend = FALSE) +
-  geom_text(aes(label=ifelse(Firearms100>25,as.character(Country),'')), hjust=1,vjust=0, show.legend = FALSE)
+  geom_text(aes(label=ifelse(Firearms100>25,as.character(Country),'')), hjust=1,vjust=0, show.legend = FALSE) +
+  geom_text(aes(label=ifelse(Population>120000000,as.character(Country),'')), hjust=1,vjust=0, show.legend = FALSE)
 
 
 ```
@@ -75,7 +79,7 @@ ggplot(table, aes(Happiness.Score, Firearms100, color = Country, size = Populati
 ```{r fire100 vs GDP, echo=FALSE}
 
 # Plot the firearms100 vs happines
-ggplot(table, aes(Economy..GDP.per.Capita., Firearms100, color = Country)) +
+ggplot(table, aes(Economy..GDP.per.Capita., Firearms100, color = Country, size = Population)) +
   geom_jitter(aes(), show.legend = FALSE)
 
 
@@ -85,7 +89,7 @@ ggplot(table, aes(Economy..GDP.per.Capita., Firearms100, color = Country)) +
 ```{r fire100 vs Life expectany, echo=FALSE}
 
 # Plot the firearms100 vs happines
-ggplot(table, aes(Health..Life.Expectancy., Firearms100, color = Country)) +
+ggplot(table, aes(Health..Life.Expectancy., Firearms100, color = Country, size = Population)) +
   geom_jitter(aes(), show.legend = FALSE)
 
 

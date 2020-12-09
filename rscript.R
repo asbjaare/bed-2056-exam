@@ -29,8 +29,11 @@ table <- table %>%
   rename("Reg_firearm" = Registered.firearms) %>% 
   rename("Unreg_firearm" = Unregistered.firearms) %>% 
   rename("Population" = Population.2017) %>% 
-  mutate(Population = as.numeric(sub(",", "", Population, value = TRUE))) %>% 
-  select(Country, Firearms100, Firearms_estimate, Reg_firearm, Unreg_firearm, Population) %>% 
+  mutate(Population = sub(",", "", Population, fixed = FALSE)) %>% 
+  mutate(Population = sub(",", "", Population, fixed = FALSE)) %>%
+  mutate(Population = sub(",", "", Population, fixed = FALSE)) %>% 
+  mutate(Population = as.numeric(Population)) %>% 
+  select(Country, Firearms100, Firearms_estimate, Reg_firearm, Unreg_firearm, Population, Region) %>% 
   merge(., df2017)
 
 
