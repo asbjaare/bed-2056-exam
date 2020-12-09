@@ -6,12 +6,11 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(
-	message = FALSE,
-	warning = FALSE,
-	include = FALSE
-)
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
 ```
+
+# Weapons and related data worldwide
+Initialy we wanted to look at if firearms ownership was related to any other usual measuring sticks for countries like GDP, life expetancy etc...
 
 ```{r create data, include=FALSE}
 rm(list=ls())
@@ -59,6 +58,9 @@ table <- table %>%
 ```
 
 ## Plot of firearms per 100 inhabitant
+This plot shows the ammount of firearms per 100 inhabitants in each country.
+
+TODO: Make it only top 25 or something and plot the civilian gun ownership vs the military one. 85% of firearms worldwide is owned by civilians
 
 ```{r 100fire , echo=FALSE}
 
@@ -72,35 +74,56 @@ ggplot(table, aes(reorder(Country, Firearms100), Firearms100, fill = Region)) +
         axis.title.y = element_blank())
 ```
 
+## Plot of firearms per 100 inhabitants vs happines score from the World happines report
+This plot is not very conclusive in any relation between the happines and ammount of firearms per 100 inhabitants
+
 ```{r fire100 vs happines, echo=FALSE}
 
 # Plot the firearms100 vs happines
 ggplot(table, aes(Happiness.Score, Firearms100, color = Country, size = Population)) +
-  geom_jitter(aes(), show.legend = FALSE) +
-  geom_text(aes(label=ifelse(Firearms100>25,as.character(Country),'')), hjust=1,vjust=0, show.legend = FALSE) +
-  geom_text(aes(label=ifelse(Population>120000000,as.character(Country),'')), hjust=1,vjust=0, show.legend = FALSE)
+  geom_jitter(aes(), show.legend = FALSE)
+  # geom_text(aes(label=ifelse(Firearms100>25,as.character(Country),'')), hjust=1,vjust=0, show.legend = FALSE) +
+  # geom_text(aes(label=ifelse(Population>120000000,as.character(Country),'')), hjust=1,vjust=0, show.legend = FALSE)
 
 
 ```
 
+## Plot of GDP vs firearms 
+Same as above, not much interresting to read from the data
+
 ```{r fire100 vs GDP, echo=FALSE}
 
-# Plot the firearms100 vs happines
+# Plot the firearms100 vs GDP
 ggplot(table, aes(Economy..GDP.per.Capita., Firearms100, color = Country, size = Population)) +
   geom_jitter(aes(), show.legend = FALSE)
 
 
 ```
 
+## Life expectancy vs firearms
+Same story as before
 
 ```{r fire100 vs Life expectany, echo=FALSE}
 
-# Plot the firearms100 vs happines
+# Plot the firearms100 vs life expectancy
 ggplot(table, aes(Health..Life.Expectancy., Firearms100, color = Country, size = Population)) +
   geom_jitter(aes(), show.legend = FALSE)
 
 
 ```
+TODO: Plot vs freedom value aswell
+
+
+Given these results it shows that the answer to what affects gun ownership does not corelate to any of the metrics from the happines report. 
+
+
+# A Change in outlook
+Given that the data did not show anything else other than that there might not be a relation between these metrics, we want to change our outlook and look at homicide by firearms.
+
+
+
+## Homicide globaly by subregions from 2000 to 2015
+TODO: Mabye split into low, medium and high. Then mabye see at if there is any data from these regions that explain what causes these differences.
 
 ```{r homicide over the years by subregion, echo=FALSE}
 ggplot(homicide_df, aes(Year, Value, group = Subregion, fill = Subregion)) +
