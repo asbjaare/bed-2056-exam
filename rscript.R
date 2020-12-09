@@ -55,7 +55,7 @@ ggplot(table, aes(Happiness.Score, Firearms100, color = Country)) +
   geom_jitter(aes(), show.legend = FALSE)
 
 ggplot(homicide_df, aes(Year, Value, group = Subregion, fill = Subregion)) +
-  geom_bar(stat = 'identity') +
+  geom_bar(stat = 'identity', show.legend = FALSE) +
   facet_wrap(~Subregion) +
   theme_light() +
   theme(axis.text.y.left = element_blank())
