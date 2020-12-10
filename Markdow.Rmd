@@ -41,7 +41,7 @@ table <- "https://en.wikipedia.org/wiki/Estimated_number_of_civilian_guns_per_ca
 
 
 # Rename the variables in the wikipedia table df and merge it with the happines data
-table <- table %>% 
+df <- table %>% 
   rename("Country" = Country..or.dependent.territory..subnational.area..etc..) %>% 
   rename("Firearms100" = Estimate.of.civilian.firearms.per.100.persons) %>% 
   rename("Firearms_estimate" = Estimate.of.firearms.in.civilian.possession) %>% 
@@ -65,7 +65,7 @@ TODO: Make it only top 25 or something and plot the civilian gun ownership vs th
 ```{r 100fire , echo=FALSE}
 
 # Plot the countries sorted in a barplot
-ggplot(table, aes(reorder(Country, Firearms100), Firearms100, fill = Region)) +
+ggplot(df, aes(reorder(Country, Firearms100), Firearms100, fill = Region)) +
   geom_bar(stat = "identity", show.legend = TRUE) +
   theme(strip.text.y = element_text(angle = 0),
         axis.text.x = element_text(angle = 45, hjust = 1, size = 6),
@@ -80,7 +80,7 @@ This plot is not very conclusive in any relation between the happines and ammoun
 ```{r fire100 vs happines, echo=FALSE}
 
 # Plot the firearms100 vs happines
-ggplot(table, aes(Happiness.Score, Firearms100, color = Country, size = Population)) +
+ggplot(df, aes(Happiness.Score, Firearms100, color = Country, size = Population)) +
   geom_jitter(aes(), show.legend = FALSE)
   # geom_text(aes(label=ifelse(Firearms100>25,as.character(Country),'')), hjust=1,vjust=0, show.legend = FALSE) +
   # geom_text(aes(label=ifelse(Population>120000000,as.character(Country),'')), hjust=1,vjust=0, show.legend = FALSE)
@@ -94,7 +94,7 @@ Same as above, not much interresting to read from the data
 ```{r fire100 vs GDP, echo=FALSE}
 
 # Plot the firearms100 vs GDP
-ggplot(table, aes(Economy..GDP.per.Capita., Firearms100, color = Country, size = Population)) +
+ggplot(df, aes(Economy..GDP.per.Capita., Firearms100, color = Country, size = Population)) +
   geom_jitter(aes(), show.legend = FALSE)
 
 
@@ -106,7 +106,7 @@ Same story as before
 ```{r fire100 vs Life expectany, echo=FALSE}
 
 # Plot the firearms100 vs life expectancy
-ggplot(table, aes(Health..Life.Expectancy., Firearms100, color = Country, size = Population)) +
+ggplot(df, aes(Health..Life.Expectancy., Firearms100, color = Country, size = Population)) +
   geom_jitter(aes(), show.legend = FALSE)
 
 
@@ -134,4 +134,41 @@ ggplot(homicide_df, aes(Year, Value, group = Subregion, fill = Subregion)) +
 
 ```
 
+## Firearms homicide vs firearms per 100 inhabitants
+This shows that the Americas region has higher firearms per 100 inhabitants, but there does not seem to be a correlation between the firarms avaliable to people and the firearms homicide rate
 
+```{r Firearms homicide vs firearms100, echo=FALSE}
+
+df_2 <- table %>% 
+  rename("Country" = Country..or.dependent.territory..subnational.area..etc..) %>% 
+  rename("Firearms100" = Estimate.of.civilian.firearms.per.100.persons) %>% 
+  rename("Firearms_estimate" = Estimate.of.firearms.in.civilian.possession) %>% 
+  rename("Reg_firearm" = Registered.firearms) %>% 
+  rename("Unreg_firearm" = Unregistered.firearms) %>% 
+  rename("Population" = Population.2017) %>% 
+  mutate(Population = sub(",", "", Population, fixed = FALSE)) %>%
+  mutate(Population = sub(",", "", Population, fixed = FALSE)) %>% 
+  mutate(Population = as.numeric(Population)) %>% 
+  select(Country, Firearms100, Population, Region)
+
+# Create the 
+df_fire_vs_homi <- homicide_df %>% 
+  filter(., Level == "Country") %>% 
+  filter(., Year == 2012) %>% 
+  select(Territory, Value) %>% 
+  mutate(Value = as.numeric(Value)) %>% 
+  rename('Country' = Territory) %>% 
+  merge(., df_2)
+
+
+# Plot the firearms100 vs happines
+ggplot(df_fire_vs_homi, aes(Firearms100, Value, color = Region, size = Population)) +
+  geom_jitter(aes(), show.legend = TRUE) +
+  xlab("Homicide rate by firearms") +
+  ylab("Firearms per 100 inhabitants") +
+  theme(axis.ticks.y = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y.left = element_blank(),
+        axis.text.x = element_blank())
+
+```
