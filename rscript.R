@@ -72,20 +72,21 @@ df_2 <- table %>%
   mutate(Population = sub(",", "", Population, fixed = FALSE)) %>%
   mutate(Population = sub(",", "", Population, fixed = FALSE)) %>% 
   mutate(Population = as.numeric(Population)) %>% 
-  select(Country, Firearms100, Population)
+  select(Country, Firearms100, Population, Region)
 
 # Create the 
 df_fire_vs_homi <- homicide_df %>% 
   filter(., Level == "Country") %>% 
   filter(., Year == 2012) %>% 
   select(Territory, Value) %>% 
+  mutate(Value = as.numeric(Value)) %>% 
   rename('Country' = Territory) %>% 
   merge(., df_2)
 
 
 # Plot the firearms100 vs happines
-ggplot(df_fire_vs_homi, aes(Value, Firearms100, color = Country, size = Population)) +
-  geom_jitter(aes(), show.legend = FALSE) +
+ggplot(df_fire_vs_homi, aes(Firearms100, Value, color = Region, size = Population)) +
+  geom_jitter(aes(), show.legend = TRUE) +
   xlab("Homicide rate by firearms") +
   ylab("Firearms per 100 inhabitants") +
   theme(axis.ticks.y = element_blank(),
