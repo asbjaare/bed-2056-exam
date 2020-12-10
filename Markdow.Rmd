@@ -10,7 +10,7 @@ knitr::opts_chunk$set(message = FALSE, warning = FALSE)
 ```
 
 # Weapons and related data worldwide
-Initialy we wanted to look at if firearms ownership was related to any other usual measuring sticks for countries like GDP, life expetancy etc...
+Initialy we wanted to look at if firearms ownership was related to any other usual measuring metrics for countries like GDP, life expetancy etc...
 
 ```{r create data, include=FALSE}
 rm(list=ls())
@@ -60,9 +60,9 @@ df <- table %>%
 ## Plot of firearms per 100 inhabitant
 This plot shows the ammount of firearms per 100 inhabitants in each country.
 
-TODO: Make it only top 25 or something and plot the civilian gun ownership vs the military one. 85% of firearms worldwide is owned by civilians
 
 ```{r 100fire , echo=FALSE}
+# TODO: Make it only top 25 or something and plot the civilian gun ownership vs the military one. 85% of firearms worldwide is owned by civilians
 
 # Plot the countries sorted in a barplot
 ggplot(df, aes(reorder(Country, Firearms100), Firearms100, fill = Region)) +
@@ -109,9 +109,9 @@ Same story as before
 ggplot(df, aes(Health..Life.Expectancy., Firearms100, color = Country, size = Population)) +
   geom_jitter(aes(), show.legend = FALSE)
 
+# TODO: Plot vs freedom value aswell
 
 ```
-TODO: Plot vs freedom value aswell
 
 
 Given these results it shows that the answer to what affects gun ownership does not corelate to any of the metrics from the happines report. 
@@ -123,9 +123,9 @@ Given that the data did not show anything else other than that there might not b
 
 
 ## Homicide globaly by subregions from 2000 to 2015
-TODO: Mabye split into low, medium and high. Then mabye see at if there is any data from these regions that explain what causes these differences.
 
 ```{r homicide over the years by subregion, echo=FALSE}
+# TODO: Mabye split into low, medium and high. Then mabye see at if there is any data from these regions that explain what causes these differences.
 ggplot(homicide_df, aes(Year, Value, group = Subregion, fill = Subregion)) +
   geom_bar(stat = 'identity', show.legend = FALSE) +
   facet_wrap(~Subregion) +
