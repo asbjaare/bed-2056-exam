@@ -36,24 +36,23 @@ homicide_df <- read_excel('homicide_all.xls') %>%
 table <- "https://en.wikipedia.org/wiki/Estimated_number_of_civilian_guns_per_capita_by_country" %>%
   read_html() %>%
   html_nodes(xpath='//table[1]') %>% 
-  html_table(fill = TRUE) %>% 
+  html_table(header = TRUE, fill = TRUE) %>% 
+  .[[1]] %>% 
   data.frame()
 
 
 # Rename the variables in the wikipedia table df and merge it with the happines data
 df <- table %>% 
   rename("Country" = Country..or.dependent.territory..subnational.area..etc..) %>% 
-  rename("Firearms100" = Estimate.of.civilian.firearms.per.100.persons) %>% 
-  rename("Firearms_estimate" = Estimate.of.firearms.in.civilian.possession) %>% 
-  rename("Reg_firearm" = Registered.firearms) %>% 
-  rename("Unreg_firearm" = Unregistered.firearms) %>% 
-  rename("Population" = Population.2017) %>% 
-  mutate(Population = sub(",", "", Population, fixed = FALSE)) %>% 
-  mutate(Population = sub(",", "", Population, fixed = FALSE)) %>%
-  mutate(Population = sub(",", "", Population, fixed = FALSE)) %>% 
-  mutate(Population = as.numeric(Population)) %>% 
-  select(Country, Firearms100, Firearms_estimate, Reg_firearm, Unreg_firearm, Population, Region) %>% 
-  merge(., df2017)
+  merge(., df2017) %>% 
+  rename("Happiness_score" = Happiness.Score) %>% 
+  rename("GDP_percap" = Economy..GDP.per.Capita.) %>% 
+  mutate("Firearms_per100" = Estimate.of.civilian.firearms.per.100.persons) %>% 
+  mutate("Life_expe" = Health..Life.Expectancy.) %>% 
+  mutate("Firearms_estimate" = as.numeric(gsub(",", "", Estimate.of.firearms.in.civilian.possession))) %>% 
+  mutate(Population = as.numeric(gsub(",", "", Population.2017, fixed = FALSE))) %>% 
+  select(Country, Firearms_per100, Firearms_estimate, Population, Region, Happiness_score, GDP_percap, Life_expe) 
+
 
 ```
 
@@ -65,13 +64,14 @@ This plot shows the ammount of firearms per 100 inhabitants in each country.
 # TODO: Make it only top 25 or something and plot the civilian gun ownership vs the military one. 85% of firearms worldwide is owned by civilians
 
 # Plot the countries sorted in a barplot
-ggplot(df, aes(reorder(Country, Firearms100), Firearms100, fill = Region)) +
+ggplot(filter(df, Firearms_per100 > 18.6), aes(reorder(Country, Firearms_per100), Firearms_per100, fill = Region)) +
   geom_bar(stat = "identity", show.legend = TRUE) +
-  theme(strip.text.y = element_text(angle = 0),
-        axis.text.x = element_text(angle = 45, hjust = 1, size = 6),
-        axis.title.x = element_blank(),
-        axis.ticks.y = element_blank(),
-        axis.title.y = element_blank())
+  geom_text(aes(label = Firearms_per100), vjust = 1, hjust = 1, size = 3) +
+  ylab('Firearms per 100 inhabitants') +
+  ggtitle('Top 25 countries in the world ranked by firearms per 100 inhabitants') +
+  theme_minimal() +
+  theme(axis.title.y = element_blank()) +
+  coord_flip()
 ```
 
 ## Plot of firearms per 100 inhabitants vs happines score from the World happines report
@@ -80,10 +80,9 @@ This plot is not very conclusive in any relation between the happines and ammoun
 ```{r fire100 vs happines, echo=FALSE}
 
 # Plot the firearms100 vs happines
-ggplot(df, aes(Happiness.Score, Firearms100, color = Country, size = Population)) +
-  geom_jitter(aes(), show.legend = FALSE)
-  # geom_text(aes(label=ifelse(Firearms100>25,as.character(Country),'')), hjust=1,vjust=0, show.legend = FALSE) +
-  # geom_text(aes(label=ifelse(Population>120000000,as.character(Country),'')), hjust=1,vjust=0, show.legend = FALSE)
+ggplot(filter(df, Firearms_per100 > 18.6), aes(Happiness_score, Firearms_per100, color = Region, size = Population)) +
+  geom_jitter(aes(), show.legend = TRUE) +
+  geom_text(aes(label=ifelse(Firearms_per100>34,as.character(Country),'')), hjust=0,vjust=1, size = 4, angle = 50, show.legend = FALSE)
 
 
 ```
@@ -94,9 +93,9 @@ Same as above, not much interresting to read from the data
 ```{r fire100 vs GDP, echo=FALSE}
 
 # Plot the firearms100 vs GDP
-ggplot(df, aes(Economy..GDP.per.Capita., Firearms100, color = Country, size = Population)) +
-  geom_jitter(aes(), show.legend = FALSE)
-
+ggplot(filter(df, Firearms_per100 > 18.6), aes(GDP_percap, Firearms_per100, color = Region, size = Population)) +
+  geom_jitter(aes(), show.legend = TRUE) +
+  geom_text(aes(label=ifelse(Firearms_per100>34,as.character(Country),'')), hjust=0,vjust=1, size = 4, angle = 50, show.legend = FALSE)
 
 ```
 
@@ -106,8 +105,9 @@ Same story as before
 ```{r fire100 vs Life expectany, echo=FALSE}
 
 # Plot the firearms100 vs life expectancy
-ggplot(df, aes(Health..Life.Expectancy., Firearms100, color = Country, size = Population)) +
-  geom_jitter(aes(), show.legend = FALSE)
+ggplot(filter(df, Firearms_per100 > 18.6), aes(Life_expe, Firearms_per100, color = Region, size = Population)) +
+  geom_jitter(aes(), show.legend = TRUE)+
+  geom_text(aes(label=ifelse(Firearms_per100>34,as.character(Country),'')), hjust=0,vjust=1, size = 4, angle = 50, show.legend = FALSE)
 
 # TODO: Plot vs freedom value aswell
 
