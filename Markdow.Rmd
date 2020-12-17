@@ -19,6 +19,10 @@ rm(list=ls())
 library(tidyverse)
 library(rvest)
 library(readxl)
+library(maps)
+library(ggmap)
+library(mapdata)
+
 
 # Read the happines data from the UN from the CSV and put it in a dataframe
 # Using the data from 2017 as the wikipedia data is also from 2017
@@ -30,7 +34,12 @@ df2017 <- read_csv('2017.csv')
 # Data gotten from dataUNODC
 homicide_df <- read_excel('homicide_all.xls') %>% 
   subset(., select = c(1:7)) %>% 
-  filter(., Indicator == 'Firearms rate')
+  filter(., Indicator == 'Firearms rate') %>% 
+  rename("Firearm_deathrate" = Value) %>% 
+  mutate("Firearm_deathrate" = as.numeric(Firearm_deathrate))
+
+homicide_df$Territory <- replace(homicide_df$Territory, homicide_df$Territory == 'United States of America', 'USA')
+
 
 # Find the table from wikipedia and return a dataframe
 table <- "https://en.wikipedia.org/wiki/Estimated_number_of_civilian_guns_per_capita_by_country" %>%
@@ -44,23 +53,57 @@ table <- "https://en.wikipedia.org/wiki/Estimated_number_of_civilian_guns_per_ca
 # Rename the variables in the wikipedia table df and merge it with the happines data
 df <- table %>% 
   rename("Country" = Country..or.dependent.territory..subnational.area..etc..) %>% 
-  merge(., df2017) %>% 
+  left_join(., df2017, by = 'Country') %>% 
   rename("Happiness_score" = Happiness.Score) %>% 
   rename("GDP_percap" = Economy..GDP.per.Capita.) %>% 
   mutate("Firearms_per100" = Estimate.of.civilian.firearms.per.100.persons) %>% 
   mutate("Life_expe" = Health..Life.Expectancy.) %>% 
   mutate("Firearms_estimate" = as.numeric(gsub(",", "", Estimate.of.firearms.in.civilian.possession))) %>% 
   mutate(Population = as.numeric(gsub(",", "", Population.2017, fixed = FALSE))) %>% 
-  select(Country, Firearms_per100, Firearms_estimate, Population, Region, Happiness_score, GDP_percap, Life_expe) 
+  select(Country, Firearms_per100, Population, Region, Happiness_score, GDP_percap, Life_expe) 
 
+# Renames United states to USA
+df$Country[2] = 'USA'
+
+# Creates a map dataframe with all the data from the other df
+world_map <- map_data("world") %>% 
+  rename(Country = 'region')
+df_map <- left_join(df, world_map, by = "Country")
+
+
+
+homi_map <- homicide_df %>% 
+  filter(., Level == "Country") %>% 
+  rename("Country" = Territory) %>% 
+  left_join(., world_map, by = "Country")
 
 ```
 
-## Plot of firearms per 100 inhabitant
+## World map of firearms rate per 100 inhabitants
+
+```{r worldmap, echo=FALSE, fig.width = 10, fig.height = 6}
+
+# Plots a map with the firearms 
+ggplot((filter(df_map, Firearms_per100 < 1000)), aes(long, lat, group = group))+
+  geom_polygon(aes(fill = Firearms_per100), color = "grey")+
+  scale_fill_continuous() +
+  theme_bw() +
+  labs(caption = 'Blank areas are countries without data', fill = 'Firearms per 
+100 inhabitants') +
+  theme(axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        legend.key.width = unit(1.5,"cm"))
+
+```
+Because of the outlier USA this graph gets difficult to read
+
+
+
+## Plot of top 25 countries with highest firearms per 100 inhabitant
 This plot shows the ammount of firearms per 100 inhabitants in each country.
 
 
-```{r 100fire , echo=FALSE}
+```{r 100fire , echo=FALSE, fig.width = 10, fig.height = 8}
 # TODO: Make it only top 25 or something and plot the civilian gun ownership vs the military one. 85% of firearms worldwide is owned by civilians
 
 # Plot the countries sorted in a barplot
@@ -77,32 +120,33 @@ ggplot(filter(df, Firearms_per100 > 18.6), aes(reorder(Country, Firearms_per100)
 ## Plot of firearms per 100 inhabitants vs happines score from the World happines report
 This plot is not very conclusive in any relation between the happines and ammount of firearms per 100 inhabitants
 
-```{r fire100 vs happines, echo=FALSE}
+```{r fire100 vs happines, echo=FALSE, fig.width = 10, fig.height = 6}
 
 # Plot the firearms100 vs happines
 ggplot(filter(df, Firearms_per100 > 18.6), aes(Happiness_score, Firearms_per100, color = Region, size = Population)) +
   geom_jitter(aes(), show.legend = TRUE) +
   geom_text(aes(label=ifelse(Firearms_per100>34,as.character(Country),'')), hjust=0,vjust=1, size = 4, angle = 50, show.legend = FALSE)
 
-
+# TODO: Fix the ugly names 
 ```
 
 ## Plot of GDP vs firearms 
 Same as above, not much interresting to read from the data
 
-```{r fire100 vs GDP, echo=FALSE}
+```{r fire100 vs GDP, echo=FALSE, fig.width = 10, fig.height = 6}
 
 # Plot the firearms100 vs GDP
 ggplot(filter(df, Firearms_per100 > 18.6), aes(GDP_percap, Firearms_per100, color = Region, size = Population)) +
   geom_jitter(aes(), show.legend = TRUE) +
   geom_text(aes(label=ifelse(Firearms_per100>34,as.character(Country),'')), hjust=0,vjust=1, size = 4, angle = 50, show.legend = FALSE)
 
+# TODO: Fix the ugly names 
 ```
 
 ## Life expectancy vs firearms
 Same story as before
 
-```{r fire100 vs Life expectany, echo=FALSE}
+```{r fire100 vs Life expectany, echo=FALSE, fig.width = 10, fig.height = 6}
 
 # Plot the firearms100 vs life expectancy
 ggplot(filter(df, Firearms_per100 > 18.6), aes(Life_expe, Firearms_per100, color = Region, size = Population)) +
@@ -110,6 +154,7 @@ ggplot(filter(df, Firearms_per100 > 18.6), aes(Life_expe, Firearms_per100, color
   geom_text(aes(label=ifelse(Firearms_per100>34,as.character(Country),'')), hjust=0,vjust=1, size = 4, angle = 50, show.legend = FALSE)
 
 # TODO: Plot vs freedom value aswell
+# TODO: Fix the ugly names 
 
 ```
 
@@ -124,51 +169,60 @@ Given that the data did not show anything else other than that there might not b
 
 ## Homicide globaly by subregions from 2000 to 2015
 
-```{r homicide over the years by subregion, echo=FALSE}
+```{r homicide over the years by subregion, echo=FALSE, fig.width = 10, fig.height = 6}
 # TODO: Mabye split into low, medium and high. Then mabye see at if there is any data from these regions that explain what causes these differences.
-ggplot(homicide_df, aes(Year, Value, group = Subregion, fill = Subregion)) +
+ggplot(homicide_df, aes(Year, Firearm_deathrate, group = Subregion, fill = Subregion)) +
   geom_bar(stat = 'identity', show.legend = FALSE) +
   facet_wrap(~Subregion) +
   theme_light() +
-  theme(axis.text.y.left = element_blank())
+  theme(axis.text.y.left = element_blank()) 
+
+
+# TODO: This has way to many country names with wierd names, using this might work somehow
+# https://www.kaggle.com/gbertou/iso-country-codes-with-alternative-country-names
+# Use this dataset to make a crosswalk dataframe and use that df to merge the two data sets with the same country names 
+ggplot(homi_map, aes(long, lat, group = group))+
+  geom_polygon(aes(fill = Firearm_deathrate), color = "grey")+
+  scale_fill_continuous() +
+  theme_bw() +
+  labs(caption = 'Blank areas are countries without data', fill = 'Homicide per 100.000 inhabitants ') +
+  theme(axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        legend.key.width = unit(1.5,"cm"))
 
 ```
 
 ## Firearms homicide vs firearms per 100 inhabitants
 This shows that the Americas region has higher firearms per 100 inhabitants, but there does not seem to be a correlation between the firarms avaliable to people and the firearms homicide rate
 
-```{r Firearms homicide vs firearms100, echo=FALSE}
+```{r Firearms homicide vs firearms100, echo=FALSE, fig.width = 10, fig.height = 6}
 
-df_2 <- table %>% 
-  rename("Country" = Country..or.dependent.territory..subnational.area..etc..) %>% 
-  rename("Firearms100" = Estimate.of.civilian.firearms.per.100.persons) %>% 
-  rename("Firearms_estimate" = Estimate.of.firearms.in.civilian.possession) %>% 
-  rename("Reg_firearm" = Registered.firearms) %>% 
-  rename("Unreg_firearm" = Unregistered.firearms) %>% 
-  rename("Population" = Population.2017) %>% 
-  mutate(Population = sub(",", "", Population, fixed = FALSE)) %>%
-  mutate(Population = sub(",", "", Population, fixed = FALSE)) %>% 
-  mutate(Population = as.numeric(Population)) %>% 
-  select(Country, Firearms100, Population, Region)
-
-# Create the 
-df_fire_vs_homi <- homicide_df %>% 
+# Create the homicide df
+df_homi <- homicide_df %>% 
+  # Filter out the countries, as this dataframe contains alot more
   filter(., Level == "Country") %>% 
+  # 2012 seems to be the year with the most countries. Would like to get a country from the other years, but alas
   filter(., Year == 2012) %>% 
-  select(Territory, Value) %>% 
-  mutate(Value = as.numeric(Value)) %>% 
+  select(Territory, Firearm_deathrate) %>% 
+  mutate(Firearm_deathrate = as.numeric(Firearm_deathrate)) %>% 
   rename('Country' = Territory) %>% 
-  merge(., df_2)
+  left_join(., df, by = 'Country')
 
 
 # Plot the firearms100 vs happines
-ggplot(df_fire_vs_homi, aes(Firearms100, Value, color = Region, size = Population)) +
+ggplot(df_homi, aes(Firearms_per100, Firearm_deathrate, color = Region)) +
   geom_jitter(aes(), show.legend = TRUE) +
-  xlab("Homicide rate by firearms") +
-  ylab("Firearms per 100 inhabitants") +
-  theme(axis.ticks.y = element_blank(),
-        axis.ticks.x = element_blank(),
-        axis.text.y.left = element_blank(),
-        axis.text.x = element_blank())
+  ylab("Homicide rate by firearms") +
+  xlab("Firearms per 100 inhabitants") +
+  theme_bw()
 
+# TODO: Look at why americas has high homicide inhabitants and and midd
+# This might be moot considering that many countries are missing
 ```
+
+
+
+
+
+
+
