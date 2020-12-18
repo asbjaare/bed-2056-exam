@@ -96,7 +96,7 @@ regional_differences <- homicide_df %>%
   rename(Country = Territory) %>% 
   merge(df)
 
-stuff <- homicide_total %>% 
+homicide_rate_df <- homicide_total %>% 
   filter(Year >= 2011 & Year <= 2015, Level == "Country") %>% 
   group_by(Territory) %>% 
   summarize("Homicide_rate" = median(Homicide_rate)) %>% 
@@ -105,7 +105,7 @@ stuff <- homicide_total %>%
   merge(df)
 
 
-more_stuff <- stuff %>% 
+ratio_df <- homicide_rate_df %>% 
   merge(regional_differences) %>% 
   mutate("Ratio" = Firearm_deathrate / Homicide_rate)
 
@@ -283,7 +283,7 @@ ggplot(df_homi, aes(Firearms_per100, Firearm_deathrate, color = Region)) +
 ```{r Firearms per 100 inhab vs total homicide rate, echo=FALSE, fig.width = 10, fig.height = 6}
 
 #### Plot number of firearms(per100) vs total homicide rate ####
-ggplot(stuff, aes(Firearms_per100, Homicide_rate, color = Region, size = Population)) +
+ggplot(homicide_rate_df, aes(Firearms_per100, Homicide_rate, color = Region, size = Population)) +
   geom_jitter(aes(),
               show.legend = TRUE) +
   xlab("Firearms per 100 inhabitants") +
@@ -291,7 +291,7 @@ ggplot(stuff, aes(Firearms_per100, Homicide_rate, color = Region, size = Populat
   labs(subtitle = "Homicide rate is amount of homicides per 100.000 inhabitants") +
   theme(axis.ticks.y = element_blank(),
         axis.ticks.x = element_blank()) +
-  geom_text(data=subset(stuff, Homicide_rate > 40 | Firearms_per100 > 40),
+  geom_text(data=subset(homicide_rate_df, Homicide_rate > 40 | Firearms_per100 > 40),
             aes(label = Country, y = Homicide_rate - 1.5),
             size = 4,
             show.legend = FALSE)
@@ -322,13 +322,13 @@ ggplot(regional_differences, aes(Firearms_per100, Firearm_deathrate, color = Reg
 ```{r Firearms per 100 inhab vs firearm proportion of homicides, echo=FALSE, fig.width = 10, fig.height = 6}
 
 #### Plot number of firearms(per100) vs what % of homicides committed by firearms ####
-ggplot(more_stuff, aes(Firearms_per100, Ratio, color = Region, size = Population)) +
+ggplot(ratio_df, aes(Firearms_per100, Ratio, color = Region, size = Population)) +
   geom_jitter(aes(),
               show.legend = TRUE) +
   xlab("Firearms per 100 inhabitants") +
   ylab("Proportion of homicides by firearm") +
   scale_y_continuous(labels = scales::percent) +
-  geom_text(data=subset(more_stuff, Ratio > 0.8),
+  geom_text(data=subset(ratio_df, Ratio > 0.8),
             aes(label = Country),
             size = 4,
             angle = -35,
@@ -344,15 +344,15 @@ ggplot(more_stuff, aes(Firearms_per100, Ratio, color = Region, size = Population
 
 
 
-testing <- more_stuff %>% 
+slice_df <- ratio_df %>% 
   filter(Happiness_score <= 7.5 & Happiness_score >= 6.5)
 
-ggplot(testing, aes(Happiness_score, Firearm_deathrate, color = Region, size = Population)) +
+ggplot(slice_df, aes(Happiness_score, Firearm_deathrate, color = Region, size = Population)) +
   geom_jitter(aes(),
               show.legend = TRUE) +
   xlab("Happiness score") +
   ylab("Homicide rate by firearms") +
-  geom_text(data=subset(testing, Firearm_deathrate > 0.5),
+  geom_text(data=subset(slice_df, Firearm_deathrate > 0.5),
             aes(label = Country, y = Firearm_deathrate - 0.5),
             size = 4,
             show.legend = FALSE)
