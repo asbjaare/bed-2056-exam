@@ -88,7 +88,7 @@ homi_map <- homicide_df %>%
 
 
 regional_differences <- homicide_df %>% 
-  filter(Year >= 2010 & Year <= 2015, Level == "Country") %>% 
+  filter(Year >= 2011 & Year <= 2015, Level == "Country") %>% 
   group_by(Territory) %>% 
   summarize("Firearm_deathrate" = median(Firearm_deathrate)) %>% 
   select(Territory, Firearm_deathrate) %>% 
@@ -96,7 +96,7 @@ regional_differences <- homicide_df %>%
   merge(df)
 
 stuff <- homicide_total %>% 
-  filter(Year >= 2010 & Year <= 2015, Level == "Country") %>% 
+  filter(Year >= 2011 & Year <= 2015, Level == "Country") %>% 
   group_by(Territory) %>% 
   summarize("Homicide_rate" = median(Homicide_rate)) %>% 
   select(Territory, Homicide_rate) %>% 
@@ -121,10 +121,13 @@ ggplot((filter(df_map, Firearms_per100 < 1000)), aes(long, lat, group = group))+
   geom_polygon(aes(fill = Firearms_per100), color = "grey")+
   scale_fill_continuous() +
   theme_bw() +
-  labs(caption = 'Blank areas are countries without data', fill = 'Firearms per 
-100 inhabitants') +
-  theme(axis.title.y = element_blank(),
+  labs(caption = 'Blank areas are countries without data', fill = 'Firearms per 100 inhabitants') +
+  theme(axis.ticks.y = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.title.y = element_blank(),
         axis.title.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.text.x = element_blank(),
         legend.key.width = unit(1.5,"cm"))
 
 ```
@@ -142,7 +145,7 @@ This plot shows the ammount of firearms per 100 inhabitants in each country.
 # Plot the countries sorted in a barplot
 ggplot(filter(df, Firearms_per100 > 18.6), aes(reorder(Country, Firearms_per100), Firearms_per100, fill = Region)) +
   geom_bar(stat = "identity", show.legend = TRUE) +
-  geom_text(aes(label = Firearms_per100), vjust = 1, hjust = 1, size = 3) +
+  geom_text(aes(label = Firearms_per100), vjust = 0.5, hjust = 1.1, size = 3) +
   ylab('Firearms per 100 inhabitants') +
   ggtitle('Top 25 countries in the world ranked by firearms per 100 inhabitants') +
   theme_minimal() +
@@ -158,7 +161,12 @@ This plot is not very conclusive in any relation between the happines and ammoun
 # Plot the firearms100 vs happines
 ggplot(filter(df, Firearms_per100 > 18.6), aes(Happiness_score, Firearms_per100, color = Region, size = Population)) +
   geom_jitter(aes(), show.legend = TRUE) +
-  geom_text(aes(label=ifelse(Firearms_per100>34,as.character(Country),'')), hjust=0,vjust=1, size = 4, angle = 50, show.legend = FALSE)
+  xlab("Happiness score") +
+  ylab("Firearms per 100 inhabitants") +
+  geom_text(aes(x = Happiness_score + Population*0.0000000002, # hacky, but gets the job done I guess?
+                y = Firearms_per100 + Population*0.000000002,
+                label=ifelse(Firearms_per100>34,as.character(Country),'')),
+            hjust=-0.12, vjust=0.18, size = 4, angle = 40, show.legend = FALSE)
 
 # TODO: Fix the ugly names 
 ```
@@ -171,7 +179,12 @@ Same as above, not much interresting to read from the data
 # Plot the firearms100 vs GDP
 ggplot(filter(df, Firearms_per100 > 18.6), aes(GDP_percap, Firearms_per100, color = Region, size = Population)) +
   geom_jitter(aes(), show.legend = TRUE) +
-  geom_text(aes(label=ifelse(Firearms_per100>34,as.character(Country),'')), hjust=0,vjust=1, size = 4, angle = 50, show.legend = FALSE)
+  xlab("GDP per capita") +
+  ylab("Firearms per 100 inhabitants") +
+  geom_text(aes(x = GDP_percap + Population*0.00000000005, # same here
+                y = Firearms_per100 + Population*0.000000002,
+                label=ifelse(Firearms_per100>34,as.character(Country),'')),
+            hjust=-0.12, vjust=0.18, size = 4, angle = 40, show.legend = FALSE)
 
 # TODO: Fix the ugly names 
 ```
@@ -181,12 +194,17 @@ Same story as before
 
 ```{r fire100 vs Life expectany, echo=FALSE, fig.width = 10, fig.height = 6}
 
-# Plot the firearms100 vs life expectancy
+# Plot the firearms100 v's life expectancy
 ggplot(filter(df, Firearms_per100 > 18.6), aes(Life_expe, Firearms_per100, color = Region, size = Population)) +
   geom_jitter(aes(), show.legend = TRUE)+
-  geom_text(aes(label=ifelse(Firearms_per100>34,as.character(Country),'')), hjust=0,vjust=1, size = 4, angle = 50, show.legend = FALSE)
+  xlab("Average life expectancy") +
+  ylab("Firearms per 100 inhabitants") +
+  geom_text(aes(x = Life_expe + Population*0.00000000002, # and here
+                y = Firearms_per100 + Population*0.000000002,
+                label=ifelse(Firearms_per100>34,as.character(Country),'')),
+            hjust=-0.12, vjust=0.18, size = 4, angle = 40, show.legend = FALSE)
 
-# TODO: Plot vs freedom value aswell
+'# TODO: Plot vs freedom value aswell
 # TODO: Fix the ugly names 
 
 ```
@@ -206,21 +224,27 @@ Given that the data did not show anything else other than that there might not b
 # TODO: Mabye split into low, medium and high. Then mabye see at if there is any data from these regions that explain what causes these differences.
 ggplot(homicide_df, aes(Year, Firearm_deathrate, group = Subregion, fill = Subregion)) +
   geom_bar(stat = 'identity', show.legend = FALSE) +
+  ylab("Annual firearm homicides per 100,000 inhabitants") +
   facet_wrap(~Subregion) +
   theme_light() +
-  theme(axis.text.y.left = element_blank()) 
+  theme(axis.text.y.left = element_blank(),
+        axis.ticks.y = element_blank()) 
 
 
 # TODO: This has way to many country names with wierd names, using this might work somehow
 # https://www.kaggle.com/gbertou/iso-country-codes-with-alternative-country-names
 # Use this dataset to make a crosswalk dataframe and use that df to merge the two data sets with the same country names 
 ggplot(homi_map, aes(long, lat, group = group))+
-  geom_polygon(aes(fill = Firearm_deathrate), color = "grey")+
+  geom_polygon(aes(fill = Firearm_deathrate), color = "grey") +
   scale_fill_continuous() +
   theme_bw() +
   labs(caption = 'Blank areas are countries without data', fill = 'Homicide per 100.000 inhabitants ') +
   theme(axis.title.y = element_blank(),
         axis.title.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.text.x = element_blank(),
         legend.key.width = unit(1.5,"cm"))
 
 ```
@@ -245,7 +269,7 @@ df_homi <- homicide_df %>%
 # Plot the firearms100 vs happines
 ggplot(df_homi, aes(Firearms_per100, Firearm_deathrate, color = Region)) +
   geom_jitter(aes(), show.legend = TRUE) +
-  ylab("Homicide rate by firearms") +
+  ylab("Homicides by firearms per 100,000 inhabitants") +
   xlab("Firearms per 100 inhabitants") +
   theme_bw()
 
@@ -262,9 +286,7 @@ ggplot(regional_differences, aes(GDP_percap, Happiness_score, color = Region, si
   xlab("GDP per capita") +
   ylab("Happiness score") +
   theme(axis.ticks.y = element_blank(),
-        axis.ticks.x = element_blank(),
-        axis.text.y.left = element_blank(),
-        axis.text.x = element_blank())
+        axis.ticks.x = element_blank())
 
 ```
 
@@ -275,13 +297,11 @@ ggplot(stuff, aes(Firearms_per100, Homicide_rate, color = Region, size = Populat
   geom_jitter(aes(),
               show.legend = TRUE) +
   xlab("Firearms per 100 inhabitants") +
-  ylab("Homicide rate") +
+  ylab("Homicides per 100,000 inhabitants") +
   theme(axis.ticks.y = element_blank(),
-        axis.ticks.x = element_blank(),
-        axis.text.y.left = element_blank(),
-        axis.text.x = element_blank()) +
-  geom_text(data=subset(regional_differences, Country == "Honduras"),
-            aes(label = Country, y = Firearm_deathrate - 2),
+        axis.ticks.x = element_blank()) +
+  geom_text(data=subset(stuff, Homicide_rate > 40 | Firearms_per100 > 40),
+            aes(label = Country, y = Homicide_rate - 1.5),
             size = 4,
             show.legend = FALSE)
 
@@ -294,13 +314,11 @@ ggplot(regional_differences, aes(Firearms_per100, Firearm_deathrate, color = Reg
   geom_jitter(aes(),
               show.legend = TRUE) +
   xlab("Firearms per 100 inhabitants") +
-  ylab("Homicide rate by firearms") +
+  ylab("Homicides by firearms per 100,000 inhabitants") +
   theme(axis.ticks.y = element_blank(),
-        axis.ticks.x = element_blank(),
-        axis.text.y.left = element_blank(),
-        axis.text.x = element_blank()) +
-  geom_text(data=subset(regional_differences, Country == "Honduras"),
-            aes(label = Country, y = Firearm_deathrate - 2),
+        axis.ticks.x = element_blank()) +
+  geom_text(data=subset(regional_differences, Firearm_deathrate > 40 | Firearms_per100 > 40),
+            aes(label = Country, y = Firearm_deathrate - 1.5),
             size = 4,
             show.legend = FALSE)
 
@@ -314,7 +332,14 @@ ggplot(more_stuff, aes(Firearms_per100, Ratio, color = Region, size = Population
               show.legend = TRUE) +
   xlab("Firearms per 100 inhabitants") +
   ylab("Proportion of homicides by firearm") +
-  scale_y_continuous(labels = scales::percent)
+  scale_y_continuous(labels = scales::percent) +
+  geom_text(data=subset(more_stuff, Ratio > 0.8),
+            aes(label = Country),
+            size = 4,
+            angle = -35,
+            vjust = 0.2,
+            hjust = -0.07,
+            show.legend = FALSE)
 
 ```
 
