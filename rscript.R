@@ -7,11 +7,15 @@ library(readxl)
 library(maps)
 library(ggmap)
 library(mapdata)
+library(gganimate)
+library(omnibus)
 
 # Read the happines data from the UN from the CSV and put it in a dataframe
 # Using the data from 2017 as the wikipedia data is also from 2017
 # Data gotten from kaggle
 df2017 <- read_csv('2017.csv')
+
+crosswalk_df <- read_csv('country_iso_codes_expanded.csv')
 
 # Create a dataframe for all homicide worldwide and remove the source collums
 # Remove the subregion rows aswell
@@ -77,6 +81,22 @@ ggplot(homi_map, aes(long, lat, group = group))+
   theme(axis.title.y = element_blank(),
         axis.title.x = element_blank(),
         legend.key.width = unit(1.5,"cm"))
+
+# Create the homicide df
+df_homi <- homicide_df %>% 
+  # Filter out the countries, as this dataframe contains alot more
+  filter(., Level == "Country") %>% 
+  # 2012 seems to be the year with the most countries. Would like to get a country from the other years, but alas
+  filter(., Year == 2012) %>% 
+  select(Territory, Firearm_deathrate) %>% 
+  mutate(Firearm_deathrate = as.numeric(Firearm_deathrate)) %>% 
+  rename('Country' = Territory) %>% 
+  left_join(., df, by = 'Country')
+
+test <- combineDf(df_homi, df, crosswalk = crosswalk_df)
+
+
+
 
 
 
