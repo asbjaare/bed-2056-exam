@@ -45,6 +45,11 @@ homicide_df <- read_excel('homicide_all.xls') %>%
   filter(., Indicator == 'Firearms rate') %>% 
   mutate("Firearms_deathrate" = as.numeric(Value))
 
+homicide_total <- read_excel('homicide_all.xls') %>% 
+  subset(., select = c(1:7)) %>% 
+  filter(., Indicator == 'Homicide rate') %>% 
+  mutate("Homicide_rate" = as.numeric(Value))
+
 # Find the table from wikipedia and return a dataframe
 table <- "https://en.wikipedia.org/wiki/Estimated_number_of_civilian_guns_per_capita_by_country" %>%
   read_html() %>%
@@ -68,48 +73,93 @@ table <- table %>%
 
 
 regional_differences <- homicide_df %>% 
-  filter(Year == 2012, Level == "Country") %>% 
+  filter(Year <= 2015 & Year >= 2010, Level == "Country") %>% 
+  group_by(Territory) %>% 
+  summarize("Firearms_deathrate" = median(Firearms_deathrate)) %>% 
   select(Territory, Firearms_deathrate) %>% 
   rename(Country = Territory) %>% 
   merge(table)
 
+stuff <- homicide_total %>% 
+  filter(Year <= 2015 & Year >= 2010, Level == "Country") %>% 
+  group_by(Territory) %>% 
+  summarize("Homicide_rate" = median(Homicide_rate)) %>% 
+  select(Territory, Homicide_rate) %>% 
+  rename(Country = Territory) %>% 
+  merge(table)
 
+
+more_stuff <- stuff %>% 
+  merge(regional_differences) %>% 
+  mutate("Ratio" = Firearms_deathrate / Homicide_rate)
+
+
+
+#### Kind of a proof of concept if anything, looking at specific slice of happiness vs firearm homicides ####
+testing <- more_stuff %>% 
+  filter(Happiness_score <= 7.5 & Happiness_score >= 6.5)
+
+ggplot(testing, aes(Happiness_score, Firearms_deathrate, color = Region, size = Population)) +
+  geom_jitter(aes(),
+              show.legend = TRUE) +
+  xlab("Happiness score") +
+  ylab("Homicide rate by firearms") +
+  geom_text(data=subset(testing, Firearms_deathrate > 0.5),
+            aes(label = Country, y = Firearms_deathrate - 0.5),
+            size = 4,
+            show.legend = FALSE)
+
+
+#### Plot number of firearms(per100) vs what % of homicides committed by firearms ####
+ggplot(more_stuff, aes(Firearms_per100, Ratio, color = Region, size = Population)) +
+  geom_jitter(aes(),
+              show.legend = TRUE) +
+  xlab("Firearms per 100 inhabitants") +
+  ylab("Proportion of homicides by firearm") +
+  scale_y_continuous(labels = scales::percent)
+
+
+#### Plot number of firearms(per100) vs total homicide rate ####
+ggplot(stuff, aes(Firearms_per100, Homicide_rate, color = Region, size = Population)) +
+  geom_jitter(aes(),
+              show.legend = TRUE) +
+  xlab("Firearms per 100 inhabitants") +
+  ylab("Homicide rate") +
+  theme(axis.ticks.y = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y.left = element_blank(),
+        axis.text.x = element_blank()) +
+  geom_text(data=subset(regional_differences, Country == "Honduras"),
+            aes(label = Country, y = Firearms_deathrate - 2),
+            size = 4,
+            show.legend = FALSE)
+
+
+
+#### Plot number of firearms(per100) vs homicides by firearm ####
 ggplot(regional_differences, aes(Firearms_per100, Firearms_deathrate, color = Region, size = Population)) +
-  geom_jitter(aes(), show.legend = TRUE) +
+  geom_jitter(aes(),
+              show.legend = TRUE) +
   xlab("Firearms per 100 inhabitants") +
   ylab("Homicide rate by firearms") +
   theme(axis.ticks.y = element_blank(),
         axis.ticks.x = element_blank(),
         axis.text.y.left = element_blank(),
-        axis.text.x = element_blank())
+        axis.text.x = element_blank()) +
+  geom_text(data=subset(regional_differences, Country == "Honduras"),
+            aes(label = Country, y = Firearms_deathrate - 2),
+            size = 4,
+            show.legend = FALSE)
 
+
+#### Plot GDP vs Happiness ####
 ggplot(regional_differences, aes(GDP_percap, Happiness_score, color = Region, size = Population)) +
   geom_jitter(aes(), show.legend = TRUE) +
-  xlab("Firearms per 100 inhabitants") +
-  ylab("Homicide rate by firearms") +
+  xlab("GDP per capita") +
+  ylab("Happiness score") +
   theme(axis.ticks.y = element_blank(),
         axis.ticks.x = element_blank(),
         axis.text.y.left = element_blank(),
         axis.text.x = element_blank())
 
 
-##### everything below is untouched #####
-
-# Plot the countries sorted in a barplot
-ggplot(table, aes(reorder(Country, Firearms_per100), Firearms_per100, fill = Country)) +
-  geom_bar(stat = "identity", show.legend = FALSE) +
-  theme(strip.text.y = element_text(angle = 0),
-        axis.text.x = element_text(angle = 45, hjust = 1, size = 6),
-        axis.title.x = element_blank(),
-        axis.ticks.y = element_blank(),
-        axis.title.y = element_blank())
-
-# Plot the firearms100 vs happines
-ggplot(table, aes(Happiness_score, Firearms_per100, color = Country)) +
-  geom_jitter(aes(), show.legend = FALSE)
-
-ggplot(homicide_df, aes(Year, Value, group = Subregion, fill = Subregion)) +
-  geom_bar(stat = 'identity', show.legend = FALSE) +
-  facet_wrap(~Subregion) +
-  theme_light() +
-  theme(axis.text.y.left = element_blank())

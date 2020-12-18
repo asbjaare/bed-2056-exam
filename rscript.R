@@ -4,6 +4,9 @@ rm(list=ls())
 library(tidyverse)
 library(rvest)
 library(readxl)
+library(maps)
+library(ggmap)
+library(mapdata)
 
 # Read the happines data from the UN from the CSV and put it in a dataframe
 # Using the data from 2017 as the wikipedia data is also from 2017
@@ -16,86 +19,65 @@ df2017 <- read_csv('2017.csv')
 homicide_df <- read_excel('homicide_all.xls') %>% 
   subset(., select = c(1:7)) %>% 
   filter(., Indicator == 'Firearms rate') %>% 
-  mutate("Firearm_deathrate" = as.numeric(Value))
+  rename("Firearm_deathrate" = Value) %>% 
+  mutate("Firearm_deathrate" = as.numeric(Firearm_deathrate))
+
+homicide_df$Territory <- replace(homicide_df$Territory, homicide_df$Territory == 'United States of America', 'USA')
 
 # Find the table from wikipedia and return a dataframe
 table <- "https://en.wikipedia.org/wiki/Estimated_number_of_civilian_guns_per_capita_by_country" %>%
   read_html() %>%
   html_nodes(xpath='//table[1]') %>% 
-  html_table(fill = TRUE) %>% 
+  html_table(header = TRUE, fill = TRUE) %>% 
+  .[[1]] %>% 
   data.frame()
 
 
 # Rename the variables in the wikipedia table df and merge it with the happines data
 df <- table %>% 
   rename("Country" = Country..or.dependent.territory..subnational.area..etc..) %>% 
-  rename("Firearms100" = Estimate.of.civilian.firearms.per.100.persons) %>% 
-  rename("Firearms_estimate" = Estimate.of.firearms.in.civilian.possession) %>% 
-  rename("Reg_firearm" = Registered.firearms) %>% 
-  rename("Unreg_firearm" = Unregistered.firearms) %>% 
-  rename("Population" = Population.2017) %>% 
-  mutate(Population = sub(",", "", Population, fixed = FALSE)) %>% 
-  mutate(Population = sub(",", "", Population, fixed = FALSE)) %>%
-  mutate(Population = sub(",", "", Population, fixed = FALSE)) %>% 
-  mutate(Population = as.numeric(Population)) %>% 
-  select(Country, Firearms100, Firearms_estimate, Reg_firearm, Unreg_firearm, Population, Region) %>% 
-  merge(., df2017)
+  left_join(., df2017, by = 'Country') %>% 
+  rename("Happiness_score" = Happiness.Score) %>% 
+  rename("GDP_percap" = Economy..GDP.per.Capita.) %>% 
+  mutate("Firearms_per100" = Estimate.of.civilian.firearms.per.100.persons) %>% 
+  mutate("Life_expe" = Health..Life.Expectancy.) %>% 
+  mutate("Firearms_estimate" = as.numeric(gsub(",", "", Estimate.of.firearms.in.civilian.possession))) %>% 
+  mutate(Population = as.numeric(gsub(",", "", Population.2017, fixed = FALSE))) %>% 
+  select(Country, Firearms_per100, Firearms_estimate, Population, Region, Happiness_score, GDP_percap, Life_expe) 
 
-# Plot the countries sorted in a barplot
-ggplot(df, aes(reorder(Country, Firearms100), Firearms100, fill = Country)) +
-  geom_bar(stat = "identity", show.legend = FALSE) +
-  theme(strip.text.y = element_text(angle = 0),
-        axis.text.x = element_text(angle = 45, hjust = 1, size = 6),
+df$Country[2] = 'USA'
+
+rm(df2017)
+
+world_map <- map_data("world") %>% 
+  rename(Country = 'region')
+df_map <- left_join(df, world_map, by = "Country")
+
+ggplot((filter(df_map, Firearms_per100 < 1000)), aes(long, lat, group = group))+
+  geom_polygon(aes(fill = Firearms_per100), color = "white")+
+  scale_fill_continuous() +
+  theme_bw() +
+  labs(fill = 'Firearms per 
+100 inhabitants') +
+  theme(axis.title.y = element_blank(),
         axis.title.x = element_blank(),
-        axis.ticks.y = element_blank(),
-        axis.title.y = element_blank())
+        legend.key.width = unit(1.5,"cm"))
 
-# Plot the firearms100 vs happines
-ggplot(df, aes(Happiness.Score, Firearms100, color = Country)) +
-  geom_jitter(aes(), show.legend = FALSE)
-
-# Plots the homicide rate 
-ggplot(homicide_df, aes(Year, Value, group = Subregion, fill = Subregion)) +
-  geom_bar(stat = 'identity', show.legend = FALSE) +
-  facet_wrap(~Subregion) +
-  theme_light() +
-  theme(axis.text.y.left = element_blank())
-
-# Dont think i need this but w/e
-df_2 <- table %>% 
-  rename("Country" = Country..or.dependent.territory..subnational.area..etc..) %>% 
-  rename("Firearms100" = Estimate.of.civilian.firearms.per.100.persons) %>% 
-  rename("Firearms_estimate" = Estimate.of.firearms.in.civilian.possession) %>% 
-  rename("Reg_firearm" = Registered.firearms) %>% 
-  rename("Unreg_firearm" = Unregistered.firearms) %>% 
-  rename("Population" = Population.2017) %>% 
-  mutate(Population = sub(",", "", Population, fixed = FALSE)) %>%
-  mutate(Population = sub(",", "", Population, fixed = FALSE)) %>% 
-  mutate(Population = as.numeric(Population)) %>% 
-  select(Country, Firearms100, Population, Region)
-
-# Create the 
-df_fire_vs_homi <- homicide_df %>% 
+homi_map <- homicide_df %>% 
   filter(., Level == "Country") %>% 
-  filter(., Year == 2012) %>% 
-  select(Territory, Value) %>% 
-  mutate(Value = as.numeric(Value)) %>% 
-  rename('Country' = Territory) %>% 
-  merge(., df_2)
+  rename("Country" = Territory) %>% 
+  left_join(., world_map, by = "Country")
 
 
-# Plot the firearms100 vs happines
-ggplot(df_fire_vs_homi, aes(Firearms100, Value, color = Region, size = Population)) +
-  geom_jitter(aes(), show.legend = TRUE) +
-  xlab("Homicide rate by firearms") +
-  ylab("Firearms per 100 inhabitants") +
-  theme(axis.ticks.y = element_blank(),
-        axis.ticks.x = element_blank(),
-        axis.text.y.left = element_blank(),
-        axis.text.x = element_blank())
+ggplot(homi_map, aes(long, lat, group = group))+
+  geom_polygon(aes(fill = Firearm_deathrate), color = "grey")+
+  scale_fill_continuous() +
+  theme_bw() +
+  labs(caption = 'Blank areas are countries without data', fill = 'Homicide per 100.000 inhabitants ') +
+  theme(axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        legend.key.width = unit(1.5,"cm"))
 
 
 
 
-
- 
