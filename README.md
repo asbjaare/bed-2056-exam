@@ -1,1 +1,3 @@
-# bed-2056-exam
+# Bed-2056 Exam Fall 2020
+
+To view our final product please view the RMarkdown.html file. The code for the html file is in the RMarkdown.Rmd file. The 2015-2020.csv files is data from Kaggle that is from the world happiness report. Country_iso_codes_expanded.csv was to create a crosswalk dataframe for the country names, but is unused at the moment. The homicide_all.xls is from the UNODC and is homicides recorded worldwide within different categories and over the years. The Small-Arms-Survey-DB-violent-deaths-xlsx is unused at the moment. 

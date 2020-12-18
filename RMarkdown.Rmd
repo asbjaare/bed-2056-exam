@@ -10,7 +10,8 @@ knitr::opts_chunk$set(message = FALSE, warning = FALSE)
 ```
 
 # Weapons and related data worldwide
-Initialy we wanted to look at if firearms ownership was related to any other usual measuring metrics for countries like GDP, life expetancy etc...
+Few topics are as heavily debated as firearms and how they should be regulated, particularly in the United States. Money talks, and with a market as large as that of firearms, it can be challenging to see through the propaganda on each side of the issue. In taking on this project, we took interest in the subject, wanting to get an unbiased view of how firearm availability correlates to things like homicide rates, individual economy and general happiness in a country. Following is our presentation of data taken from Kaggle, UNODC and Small Firearms Survey.
+
 
 ```{r create data, include=FALSE}
 rm(list=ls())
@@ -112,16 +113,17 @@ more_stuff <- stuff %>%
 
 ```
 
-## World map of firearms rate per 100 inhabitants
+## Worldwide distribution of firearms
 
 ```{r worldmap, echo=FALSE, fig.width = 10, fig.height = 6}
 
 # Plots a map with the firearms 
 ggplot((filter(df_map, Firearms_per100 < 1000)), aes(long, lat, group = group))+
   geom_polygon(aes(fill = Firearms_per100), color = "grey")+
+  # This color scale is colorblind friendly 
   scale_fill_viridis_c(option = "plasma", trans = "sqrt") +
   theme_bw() +
-  labs(caption = 'Blank areas are countries without data', fill = 'Firearms rate') +
+  labs(caption = 'Blank areas are countries without data', fill = 'Firearms rate', subtitle = "Firearms rate is amount of firearms per 100 inhabitants") +
   theme(axis.ticks.y = element_blank(),
         axis.ticks.x = element_blank(),
         axis.title.y = element_blank(),
@@ -131,16 +133,15 @@ ggplot((filter(df_map, Firearms_per100 < 1000)), aes(long, lat, group = group))+
         legend.key.width = unit(1.5,"cm"))
 
 ```
-Because of the outlier USA this graph gets difficult to read
+It quickly became clear to us just how big of an outlier the US was in terms of the sheer number of firearms in the civilian(IS THIS ACCURATE??) population, more than doubling any other country, and trippling most.
 
 
 
-## Plot of top 25 countries with highest firearms per 100 inhabitant
-This plot shows the ammount of firearms per 100 inhabitants in each country.
+### Top 25 countries with the most firearms
+This plot shows the amount of firearms per 100 inhabitants in each country.
 
 
 ```{r 100fire , echo=FALSE, fig.width = 10, fig.height = 8}
-# TODO: Make it only top 25 or something and plot the civilian gun ownership vs the military one. 85% of firearms worldwide is owned by civilians
 
 # Plot the countries sorted in a barplot
 ggplot(filter(df, Firearms_per100 > 18.6), aes(reorder(Country, Firearms_per100), Firearms_per100, fill = Region)) +
@@ -152,10 +153,10 @@ ggplot(filter(df, Firearms_per100 > 18.6), aes(reorder(Country, Firearms_per100)
   theme(axis.title.y = element_blank()) +
   coord_flip()
 ```
+The top 25 countries have a large amount of eurpean countries in total, and some of the highest countries are from the Americas region of the world, eg. USA. 
 
-## Plot of firearms per 100 inhabitants vs happines score from the World happines report
-This plot is not very conclusive in any relation between the happines and ammount of firearms per 100 inhabitants
 
+## Firearms prevalence and happiness
 ```{r fire100 vs happines, echo=FALSE, fig.width = 10, fig.height = 6}
 
 # Plot the firearms100 vs happines
@@ -169,9 +170,10 @@ ggplot(filter(df, Firearms_per100 > 18.6), aes(Happiness_score, Firearms_per100,
             hjust=-0.12, vjust=0.18, size = 4, angle = 40, show.legend = FALSE)
 
 ```
+In the top 25 countries there does not seem to be a correlation with between firearms rate and happines. Thus we want to see if another metric is linked to firearms rate, such as GDP
 
-## Plot of GDP vs firearms 
-Same as above, not much interresting to read from the data
+
+## GDP vs firearms
 
 ```{r fire100 vs GDP, echo=FALSE, fig.width = 10, fig.height = 6}
 
@@ -186,9 +188,10 @@ ggplot(filter(df, Firearms_per100 > 18.6), aes(GDP_percap, Firearms_per100, colo
             hjust=-0.12, vjust=0.18, size = 4, angle = 40, show.legend = FALSE)
 
 ```
+The GDP shows just as much interesting as the happines ranking. Our last metric from the world happines report is life expectancy
+
 
 ## Life expectancy vs firearms
-Same story as before
 
 ```{r fire100 vs Life expectany, echo=FALSE, fig.width = 10, fig.height = 6}
 
@@ -204,9 +207,26 @@ ggplot(filter(df, Firearms_per100 > 18.6), aes(Life_expe, Firearms_per100, color
 
 
 ```
-
-
+Life expectancy does aswell appear to not have any correlation with firearms rate. 
 Given these results it shows that the answer to what affects gun ownership does not corelate to any of the metrics from the happines report. 
+Seeing that a lot of the countries where in the same spot in the different graphs, we postulated that there might be a correlation between the metrics from the happines report. 
+
+## GDP vs Happiness
+
+
+```{r GDP vs Happiness, echo=FALSE, fig.width = 10, fig.height = 6}
+
+#### Plot GDP vs Happiness ####
+ggplot(regional_differences, aes(GDP_percap, Happiness_score, color = Region, size = Population)) +
+  geom_jitter(aes(), show.legend = TRUE) +
+  xlab("GDP per capita") +
+  ylab("Happiness score") +
+  theme(axis.ticks.y = element_blank(),
+        axis.ticks.x = element_blank())
+
+```
+This graph shows that there might be a correlation between GDP and happines. 
+
 
 
 # A Change in outlook
@@ -258,17 +278,7 @@ ggplot(df_homi, aes(Firearms_per100, Firearm_deathrate, color = Region)) +
 ```
 
 
-```{r GDP vs Happiness, echo=FALSE, fig.width = 10, fig.height = 6}
-
-#### Plot GDP vs Happiness ####
-ggplot(regional_differences, aes(GDP_percap, Happiness_score, color = Region, size = Population)) +
-  geom_jitter(aes(), show.legend = TRUE) +
-  xlab("GDP per capita") +
-  ylab("Happiness score") +
-  theme(axis.ticks.y = element_blank(),
-        axis.ticks.x = element_blank())
-
-```
+## Firearms rate vs total homicide rate
 
 ```{r Firearms per 100 inhab vs total homicide rate, echo=FALSE, fig.width = 10, fig.height = 6}
 
@@ -278,6 +288,7 @@ ggplot(stuff, aes(Firearms_per100, Homicide_rate, color = Region, size = Populat
               show.legend = TRUE) +
   xlab("Firearms per 100 inhabitants") +
   ylab("Homicides per 100,000 inhabitants") +
+  labs(subtitle = "Homicide rate is amount of homicides per 100.000 inhabitants") +
   theme(axis.ticks.y = element_blank(),
         axis.ticks.x = element_blank()) +
   geom_text(data=subset(stuff, Homicide_rate > 40 | Firearms_per100 > 40),
@@ -287,6 +298,8 @@ ggplot(stuff, aes(Firearms_per100, Homicide_rate, color = Region, size = Populat
 
 ```
 
+
+## Firearms rate vs firearms homicide rate
 ```{r Firearms per 100 inhab vs firearm homicide rate, echo=FALSE, fig.width = 10, fig.height = 6}
 
 #### Plot number of firearms(per100) vs homicides by firearm ####
@@ -304,6 +317,8 @@ ggplot(regional_differences, aes(Firearms_per100, Firearm_deathrate, color = Reg
 
 ```
 
+
+## Firearms rate vs proportion of homicides commited by firearms
 ```{r Firearms per 100 inhab vs firearm proportion of homicides, echo=FALSE, fig.width = 10, fig.height = 6}
 
 #### Plot number of firearms(per100) vs what % of homicides committed by firearms ####
@@ -323,12 +338,10 @@ ggplot(more_stuff, aes(Firearms_per100, Ratio, color = Region, size = Population
 
 ```
 
+## Slice of happiness score and firearms homicide deathrate
+
 ```{r Firearm homicides, filtering for similar happiness, echo=FALSE, fig.width = 10, fig.height = 6}
 
-#### Kind of a proof of concept if anything, looking at specific slice of happiness vs firearm homicides ####
-
-# Not sure what to use this for / whether to use? He mentioned we could do it in zoom call
-# Nothing interesting in the data here, but we can show that we know "how" to do it
 
 
 testing <- more_stuff %>% 
